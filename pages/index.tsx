@@ -394,6 +394,7 @@ export default function App() {
 
         <hr className='my-5' />
 
+
         <h2 className='text-2xl mb-5 font-bold'>Workouts</h2>
 
         {workoutState?.loading ? "Loading..." : <>
