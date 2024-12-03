@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import {
   ReactFlow,
   useNodesState,
@@ -6,7 +6,8 @@ import {
   addEdge,
   Node,
   Position,
-  Handle,
+  Handle, Background,
+  BackgroundVariant
 } from '@xyflow/react';
 
 import '@xyflow/react/dist/style.css';
@@ -14,20 +15,27 @@ import Image from 'next/image';
 import { GetServerSidePropsContext } from 'next';
 import { appRouter } from './api/trpc/[trpc]';
 import { t } from '../utils/trpcserver';
-import { getCookie } from 'cookies-next';
+import { getCookie, setCookie } from 'cookies-next';
 import { tokenName } from '../utils/cookies';
-import { DialogOrBottomSheet } from '../components/overflows';
+import { Dialog, DialogOrBottomSheet } from '../components/overflows';
 import { trpc } from '../utils/trpc';
 import { ExerciseObject, WorkoutExtendedObject, WorkoutObject } from '../utils/types';
-import { MdInfo, MdInfoOutline } from 'react-icons/md';
+import { MdCheck, MdCheckBox, MdCheckCircle, MdIncompleteCircle, MdInfo, MdInfoOutline, MdPerson, MdSettings } from 'react-icons/md';
+import Link from 'next/link';
+import { Switch } from '../components/switch';
 
 const devMode = true
+
+const SavedSkillsContext = createContext<string[]>([])
 
 const CustomNode = ({ data, id }: any) => {
   const skill = skills.find(i => i.id == id)
 
+
+  const savedSkills = useContext(SavedSkillsContext)
+
   return (
-    <div className='text-center flex flex-col items-center rounded ' >
+    <div className='text-center flex flex-col items-center rounded' >
 
       <Handle
         type="source"
@@ -39,9 +47,12 @@ const CustomNode = ({ data, id }: any) => {
         position={data.target ?? Position.Bottom} // Place the handle on the left
         style={{ background: "red", }}
       />
-      {data.children ? data.children : <div className='cursor-pointer flex flex-col items-center'>
-        <Image className='rounded-t border bg-white' width={50} height={50} src={`/skills${skill?.photo!}`} alt='Image' />
-        <div className='whitespace-pre-wrap' style={{ fontWeight: "bold", marginBottom: "8px" }}>{skill?.name}{devMode && skill?.workouts ? "✅" : ""}</div>
+      {data.children ? data.children : <div className='cursor-pointer flex flex-col items-center group'>
+        <div className='relative'>
+          {<MdCheckCircle className={`${savedSkills.includes(id) ? 'text-green-500' : 'text-gray-300'} absolute top-0 left-0 z-10`} />}
+          <Image className='rounded-t border bg-white group-hover:scale-110 transition-all' width={50} height={50} src={`/skills${skill?.photo!}`} alt='Image' />
+        </div>
+        <div className='whitespace-pre-wrap group-hover:text-blue-600 transition-all' style={{ fontWeight: "bold", marginBottom: "8px" }}>{skill?.name}</div>
       </div>}
       {/* {data.children} */}
     </div >
@@ -93,7 +104,7 @@ const skills: Skill[] = [
     name: 'Planche lean',
     photo: '/planchelean.png',
     type: 'beginner',
-    description: "The Planche Lean is a fundamental progression towards the full planche, focusing on developing the specific strength and body positioning required for advanced static holds. In this skill, the athlete leans forward from a push-up position, shifting their body's center of gravity beyond their hands while maintaining straight arms and a rigid body. This movement challenges the practitioner's shoulder strength, core stability, and balance. Unlike a full planche, the lean allows beginners to build the necessary strength and body awareness incrementally. The skill develops incredible shoulder and chest strength, requiring practitioners to engage their entire posterior chain and learn to support body weight in a horizontally extended position. Progression involves increasing the angle of the lean, maintaining tension, and eventually working towards holding a full planche position."
+    description: "The Planche Lean is a fundamental progression towards the full planche, focusing on developing the specific strength and body positioning required for advanced static holds. In this skill, the athlete leans forward from a push-up position, shifting their body's center of gravity beyond their hands while maintaining straight arms and a rigid body. This movement challenges the practitioner's shoulder strength, core stability, and balance. Unlike a full planche, the lean allows beginners to build the necessary strength and body awareness incrementally. The skill develops incredible shoulder and chest strength, requiring practitioners to engage their entire posterior chain and learn to support body weight in a horizontally extended position. Progression involves increasing the angle of the lean, maintaining tension, and eventually working towards holding a full planche position.", workouts: ["f38370e7-54a0-4d8b-852d-0bd4475186e6"]
   },
 
   {
@@ -101,7 +112,8 @@ const skills: Skill[] = [
     name: 'Elbow lever',
     photo: '/elbowlever.png',
     type: 'beginner',
-    description: "The Elbow Lever is a foundational static hold that demonstrates remarkable body control and upper body strength. Performed by balancing the body horizontally above the ground, supported solely by the elbows, this skill requires precise weight distribution and intense core engagement. The athlete positions their elbows close to the body's center, lifting their legs off the ground while maintaining a straight, rigid body position. Despite appearing simple, the elbow lever demands exceptional tricep strength, shoulder stability, and body awareness. Practitioners must learn to micro-adjust their body's position, finding the delicate balance point where gravity is perfectly counteracted. The skill serves as an excellent progression towards more advanced static holds like the full planche, developing the strength and control necessary for complex calisthenics movements."
+    description: "The Elbow Lever is a foundational static hold that demonstrates remarkable body control and upper body strength. Performed by balancing the body horizontally above the ground, supported solely by the elbows, this skill requires precise weight distribution and intense core engagement. The athlete positions their elbows close to the body's center, lifting their legs off the ground while maintaining a straight, rigid body position. Despite appearing simple, the elbow lever demands exceptional tricep strength, shoulder stability, and body awareness. Practitioners must learn to micro-adjust their body's position, finding the delicate balance point where gravity is perfectly counteracted. The skill serves as an excellent progression towards more advanced static holds like the full planche, developing the strength and control necessary for complex calisthenics movements.",
+    workouts: ['9243c799-1c80-411a-a3c2-fcf66525f44c', '3fab170a-a3e4-4820-9c47-500c8264e4e1']
   },
 
   {
@@ -118,7 +130,7 @@ const skills: Skill[] = [
     name: 'Handstand',
     type: 'intermediate',
     photo: '/handstand.png',
-    description: "The Handstand represents a pinnacle of body control in calisthenics, where the athlete balances completely inverted, supporting their entire body weight on their hands in a perfectly vertical position. This skill demands extraordinary shoulder strength, core stability, and precise body alignment. Unlike simpler inversions, a true handstand requires maintaining a completely straight body with zero bend in the hips, knees, or ankles, creating a perfect vertical line. Practitioners must develop incredible shoulder endurance, learn to make minute balance corrections through finger and wrist engagement, and overcome the psychological fear of being completely upside down. The handstand is not just a strength skill but a complex movement that integrates strength, balance, flexibility, and body awareness. Progression involves developing wall support, learning controlled entry and exit techniques, and eventually achieving free-standing holds with minimal movement."
+    description: "The Handstand represents a pinnacle of body control in calisthenics, where the athlete balances completely inverted, supporting their entire body weight on their hands in a perfectly vertical position. This skill demands extraordinary shoulder strength, core stability, and precise body alignment. Unlike simpler inversions, a true handstand requires maintaining a completely straight body with zero bend in the hips, knees, or ankles, creating a perfect vertical line. Practitioners must develop incredible shoulder endurance, learn to make minute balance corrections through finger and wrist engagement, and overcome the psychological fear of being completely upside down. The handstand is not just a strength skill but a complex movement that integrates strength, balance, flexibility, and body awareness. Progression involves developing wall support, learning controlled entry and exit techniques, and eventually achieving free-standing holds with minimal movement.", workouts: ['e3e3c97d-8a6d-4a45-8e5b-cdd29bf00c68', '9fffa2e2-da69-49ee-9d18-687591d66c6e']
   },
 
   {
@@ -126,7 +138,8 @@ const skills: Skill[] = [
     name: 'Dragon Flag',
     type: 'intermediate',
     photo: '/dragonflag.png',
-    description: "The Dragon Flag is an extreme core strength exercise that challenges the entire posterior chain, made famous by martial arts legend Bruce Lee. In this skill, the athlete lies on their back and raises their entire body off the ground, supporting their weight on their shoulders while keeping the body completely rigid and horizontal. This movement requires exceptional core strength, lower back stability, and the ability to maintain tension across multiple muscle groups simultaneously. Practitioners must learn to create a straight line from head to toe, suspending their body above the ground with only their upper back and shoulders in contact with the support surface. The dragon flag develops incredible abdominal strength, teaches full-body tension, and serves as a progression towards more advanced static holds. It demands not just muscle strength, but the ability to maintain total body control under extreme mechanical disadvantage."
+    description: "The Dragon Flag is an extreme core strength exercise that challenges the entire posterior chain, made famous by martial arts legend Bruce Lee. In this skill, the athlete lies on their back and raises their entire body off the ground, supporting their weight on their shoulders while keeping the body completely rigid and horizontal. This movement requires exceptional core strength, lower back stability, and the ability to maintain tension across multiple muscle groups simultaneously. Practitioners must learn to create a straight line from head to toe, suspending their body above the ground with only their upper back and shoulders in contact with the support surface. The dragon flag develops incredible abdominal strength, teaches full-body tension, and serves as a progression towards more advanced static holds. It demands not just muscle strength, but the ability to maintain total body control under extreme mechanical disadvantage.",
+    workouts: ['62f3d04e-6fef-44b6-9b34-c046e4b3f5d3', '71638c19-223b-4a9e-85ca-3ebe00526668']
   },
 
   {
@@ -134,7 +147,8 @@ const skills: Skill[] = [
     name: 'Human Flag',
     type: 'intermediate',
     photo: '/humanflag.png',
-    description: "The Human Flag is one of the most visually impressive and challenging calisthenics skills, where the athlete holds their entire body horizontally while gripping a vertical pole or bar. This skill requires extraordinary lateral core strength, shoulder stability, and full-body tension. Practitioners must generate enough horizontal force to counter gravity, creating a perfectly straight body that appears to float parallel to the ground. The movement challenges the athlete's ability to maintain rigidity while supporting their entire body weight through minimal contact points. Success demands not just raw strength, but precise body positioning, incredible grip strength, and the ability to generate lateral force through the upper and lower body. Progression involves developing shoulder and oblique strength, learning to generate full-body tension, and incrementally increasing hold time and body positioning."
+    description: "The Human Flag is one of the most visually impressive and challenging calisthenics skills, where the athlete holds their entire body horizontally while gripping a vertical pole or bar. This skill requires extraordinary lateral core strength, shoulder stability, and full-body tension. Practitioners must generate enough horizontal force to counter gravity, creating a perfectly straight body that appears to float parallel to the ground. The movement challenges the athlete's ability to maintain rigidity while supporting their entire body weight through minimal contact points. Success demands not just raw strength, but precise body positioning, incredible grip strength, and the ability to generate lateral force through the upper and lower body. Progression involves developing shoulder and oblique strength, learning to generate full-body tension, and incrementally increasing hold time and body positioning.",
+    workouts: ["7a1c7630-a705-4016-8311-6bc4acb939b3", 'ad408f9d-8467-4c09-9bf9-afb259b38cc4']
   },
 
   {
@@ -142,7 +156,8 @@ const skills: Skill[] = [
     name: 'Handstand \n Pushup',
     type: 'intermediate',
     photo: '/handstandpushup.png',
-    description: "The Handstand Pushup represents the pinnacle of upper body pressing strength in calisthenics, combining the complexity of a handstand with the explosive power of a pushup. Performed while fully inverted, the athlete must lower their body from a perfect handstand position and press back up using pure shoulder and tricep strength. This skill demands extraordinary shoulder strength, precise body control, and the ability to generate pushing power in a completely vertical plane. Unlike traditional pushups, this movement requires practitioners to support and move their entire body weight through a complete range of motion while maintaining perfect body alignment. The handstand pushup develops incredible overhead pressing strength, shoulder stability, and body awareness. Progression involves developing wall-supported variations, gradually increasing range of motion, and learning to control the entire movement with minimal body deviation."
+    description: "The Handstand Pushup represents the pinnacle of upper body pressing strength in calisthenics, combining the complexity of a handstand with the explosive power of a pushup. Performed while fully inverted, the athlete must lower their body from a perfect handstand position and press back up using pure shoulder and tricep strength. This skill demands extraordinary shoulder strength, precise body control, and the ability to generate pushing power in a completely vertical plane. Unlike traditional pushups, this movement requires practitioners to support and move their entire body weight through a complete range of motion while maintaining perfect body alignment. The handstand pushup develops incredible overhead pressing strength, shoulder stability, and body awareness. Progression involves developing wall-supported variations, gradually increasing range of motion, and learning to control the entire movement with minimal body deviation.",
+    workouts: ['873235ad-2c2c-42c7-94f3-2879078c1fc8', '2215dae4-abf4-437c-8ac4-029e433bdcf1']
   },
 
   {
@@ -158,7 +173,7 @@ const skills: Skill[] = [
     name: 'Tucked Planche',
     type: 'intermediate',
     photo: '/tuckedplanche.png',
-    description: "The Tucked Planche is a fundamental static hold that bridges the gap between basic strength training and advanced calisthenics skills. In this position, the athlete maintains a horizontal body position supported by straight arms, with knees drawn close to the chest to reduce leverage. This skill demands extraordinary shoulder strength, core stability, and the ability to generate horizontal pushing force. Practitioners must learn to shift their center of gravity forward, creating a position that challenges traditional gravitational constraints. The tucked planche develops incredible shoulder and chest strength, teaching athletes to generate tension and control through precise body positioning. It serves as a critical progression towards full planche holds, requiring practitioners to develop not just strength, but the nuanced body awareness necessary for more advanced static holds."
+    description: "The Tucked Planche is a fundamental static hold that bridges the gap between basic strength training and advanced calisthenics skills. In this position, the athlete maintains a horizontal body position supported by straight arms, with knees drawn close to the chest to reduce leverage. This skill demands extraordinary shoulder strength, core stability, and the ability to generate horizontal pushing force. Practitioners must learn to shift their center of gravity forward, creating a position that challenges traditional gravitational constraints. The tucked planche develops incredible shoulder and chest strength, teaching athletes to generate tension and control through precise body positioning. It serves as a critical progression towards full planche holds, requiring practitioners to develop not just strength, but the nuanced body awareness necessary for more advanced static holds.", workouts: ['e40d0002-1009-4990-9a09-e120622193f0']
   },
 
 
@@ -167,7 +182,7 @@ const skills: Skill[] = [
     name: 'Back Lever',
     type: 'intermediate',
     photo: '/backlever.png',
-    description: "The Back Lever is a sophisticated static hold that demonstrates exceptional pulling strength and body control. In this skill, the athlete hangs from a bar in a fully extended position, body perfectly horizontal with the back facing the ground. This movement requires incredible shoulder mobility, lat strength, and full-body tension. Practitioners must learn to rotate their body beneath the bar, maintaining a completely straight body position while supporting their entire weight in a mechanically challenging orientation. The back lever develops comprehensive posterior chain strength, teaching athletes to generate and maintain tension through a full range of motion. It serves as a crucial progression in lever training, demanding not just raw strength, but the ability to maintain perfect body alignment under extreme mechanical stress."
+    description: "The Back Lever is a sophisticated static hold that demonstrates exceptional pulling strength and body control. In this skill, the athlete hangs from a bar in a fully extended position, body perfectly horizontal with the back facing the ground. This movement requires incredible shoulder mobility, lat strength, and full-body tension. Practitioners must learn to rotate their body beneath the bar, maintaining a completely straight body position while supporting their entire weight in a mechanically challenging orientation. The back lever develops comprehensive posterior chain strength, teaching athletes to generate and maintain tension through a full range of motion. It serves as a crucial progression in lever training, demanding not just raw strength, but the ability to maintain perfect body alignment under extreme mechanical stress.", workouts: ['023eb814-9549-4756-9e5d-eb6a83529fed', 'c376ff62-50bc-4ece-b68d-3c587d97268f']
   },
 
   {
@@ -175,7 +190,8 @@ const skills: Skill[] = [
     name: 'Front Lever',
     type: 'intermediate',
     photo: '/frontlever.png',
-    description: "The Front Lever represents one of the most challenging static holds in calisthenics, where the athlete maintains a perfectly horizontal body position facing upwards, supported solely by their arms. This skill demands extraordinary lat strength, core stability, and full-body tension. Practitioners must generate enough pulling force to counteract gravity, creating a completely straight body that appears to float parallel to the ground. The front lever challenges the athlete's ability to maintain a rigid body position while supporting their entire weight through minimal contact points. Success requires not just incredible pulling strength, but precise body positioning, full-body tension, and the mental fortitude to maintain an extremely challenging hold. It serves as the ultimate test of upper body and core strength in calisthenics training."
+    description: "The Front Lever represents one of the most challenging static holds in calisthenics, where the athlete maintains a perfectly horizontal body position facing upwards, supported solely by their arms. This skill demands extraordinary lat strength, core stability, and full-body tension. Practitioners must generate enough pulling force to counteract gravity, creating a completely straight body that appears to float parallel to the ground. The front lever challenges the athlete's ability to maintain a rigid body position while supporting their entire weight through minimal contact points. Success requires not just incredible pulling strength, but precise body positioning, full-body tension, and the mental fortitude to maintain an extremely challenging hold. It serves as the ultimate test of upper body and core strength in calisthenics training.",
+    workouts: ['0b03d956-2ecc-41aa-9080-cb59a5d6891e', 'c84d167c-42f6-4dd3-936c-56d3929fd5df']
   },
 
   {
@@ -183,7 +199,8 @@ const skills: Skill[] = [
     name: 'One Arm Pushup',
     type: 'intermediate',
     photo: '/onearmpushup.jpeg',
-    description: "The One Arm Pushup is an advanced bodyweight exercise that represents the pinnacle of pushing strength and body control. In this skill, the athlete performs a complete pushup using only a single arm, requiring extraordinary strength, balance, and core stability. Unlike traditional pushups, this movement demands the ability to generate pushing force asymmetrically while maintaining perfect body alignment. Practitioners must develop incredible chest, shoulder, and tricep strength, along with the ability to create full-body tension and balance. The skill challenges not just muscle power, but total body coordination, requiring the athlete to distribute weight evenly and maintain a rigid body position throughout the movement. Progression involves years of systematic strength training, learning to generate unilateral pushing force, and developing the confidence to support the entire body weight through a single point of contact."
+    description: "The One Arm Pushup is an advanced bodyweight exercise that represents the pinnacle of pushing strength and body control. In this skill, the athlete performs a complete pushup using only a single arm, requiring extraordinary strength, balance, and core stability. Unlike traditional pushups, this movement demands the ability to generate pushing force asymmetrically while maintaining perfect body alignment. Practitioners must develop incredible chest, shoulder, and tricep strength, along with the ability to create full-body tension and balance. The skill challenges not just muscle power, but total body coordination, requiring the athlete to distribute weight evenly and maintain a rigid body position throughout the movement. Progression involves years of systematic strength training, learning to generate unilateral pushing force, and developing the confidence to support the entire body weight through a single point of contact.",
+    workouts: ['9372377d-12fb-4709-b1f3-90e21dcd3ce8', '89d9af00-2099-4aa2-b1f9-0c9777c88683']
 
   },
 
@@ -192,7 +209,7 @@ const skills: Skill[] = [
     name: 'V-sit',
     type: 'intermediate',
     photo: '/vsit.png',
-    description: "The V-Sit is an advanced core strength skill that demonstrates exceptional body control and isometric strength. In this position, the athlete balances on their sitting bones, lifting both legs and torso off the ground to create a 'V' shape with the body. This skill demands incredible core strength, hip flexor endurance, and full-body tension. Practitioners must generate enough upward force to suspend their legs and upper body while maintaining a perfectly straight body position. Unlike simpler core exercises, the V-Sit requires practitioners to support their entire body weight through minimal contact points, challenging the athlete's ability to create and maintain tension across multiple muscle groups. The movement develops comprehensive core strength, improves body awareness, and serves as a crucial progression for more advanced static holds in calisthenics and gymnastics training."
+    description: "The V-Sit is an advanced core strength skill that demonstrates exceptional body control and isometric strength. In this position, the athlete balances on their sitting bones, lifting both legs and torso off the ground to create a 'V' shape with the body. This skill demands incredible core strength, hip flexor endurance, and full-body tension. Practitioners must generate enough upward force to suspend their legs and upper body while maintaining a perfectly straight body position. Unlike simpler core exercises, the V-Sit requires practitioners to support their entire body weight through minimal contact points, challenging the athlete's ability to create and maintain tension across multiple muscle groups. The movement develops comprehensive core strength, improves body awareness, and serves as a crucial progression for more advanced static holds in calisthenics and gymnastics training.", workouts: ['5ce00cb3-507c-41b1-be0e-580e98c11e03']
   },
 
 
@@ -201,7 +218,7 @@ const skills: Skill[] = [
     name: 'Straight \narm press',
     type: 'advanced',
     photo: '/sahp.png',
-    description: "The Straight Arm Press is an advanced skill that demonstrates exceptional shoulder strength and body control. In this movement, the athlete generates a pressing motion while maintaining completely straight arms, transitioning from a lower position to an overhead hold without bending the elbows. This skill requires extraordinary shoulder stability, full-body tension, and the ability to generate pressing force through a mechanically disadvantaged position. Practitioners must develop incredible strength in the shoulders and upper body, learning to create tension and generate power while maintaining a rigid body position. The straight arm press serves as a pinnacle of shoulder strength and body control, challenging athletes to generate force through a range of motion that traditional pressing movements cannot achieve."
+    description: "The Straight Arm Press is an advanced skill that demonstrates exceptional shoulder strength and body control. In this movement, the athlete generates a pressing motion while maintaining completely straight arms, transitioning from a lower position to an overhead hold without bending the elbows. This skill requires extraordinary shoulder stability, full-body tension, and the ability to generate pressing force through a mechanically disadvantaged position. Practitioners must develop incredible strength in the shoulders and upper body, learning to create tension and generate power while maintaining a rigid body position. The straight arm press serves as a pinnacle of shoulder strength and body control, challenging athletes to generate force through a range of motion that traditional pressing movements cannot achieve.", workouts: ['024d9fce-ce1f-4739-88b1-22f40a4daa74']
   },
 
 
@@ -210,7 +227,8 @@ const skills: Skill[] = [
     name: 'Straddle Planche',
     type: 'advanced',
     photo: '/straddleplanche.png',
-    description: "The Straddle Planche represents a sophisticated progression towards the full planche, where the athlete maintains a horizontal body position with legs spread apart to reduce leverage. This advanced skill demands extraordinary shoulder strength, core stability, and full-body tension. Practitioners must generate enough horizontal force to support their entire body weight while maintaining a perfectly straight body, with legs extended outward in a straddle position. Unlike the tucked planche, the straddle variation increases difficulty by extending the legs, creating a more challenging lever arm. The movement requires incredible body control, precise weight distribution, and the ability to generate pushing force from an extreme horizontal position. Athletes must develop not just raw strength, but the nuanced body awareness to maintain tension and balance while defying gravity in this challenging static hold."
+    description: "The Straddle Planche represents a sophisticated progression towards the full planche, where the athlete maintains a horizontal body position with legs spread apart to reduce leverage. This advanced skill demands extraordinary shoulder strength, core stability, and full-body tension. Practitioners must generate enough horizontal force to support their entire body weight while maintaining a perfectly straight body, with legs extended outward in a straddle position. Unlike the tucked planche, the straddle variation increases difficulty by extending the legs, creating a more challenging lever arm. The movement requires incredible body control, precise weight distribution, and the ability to generate pushing force from an extreme horizontal position. Athletes must develop not just raw strength, but the nuanced body awareness to maintain tension and balance while defying gravity in this challenging static hold.",
+    workouts: ['c891fe58-5cc0-42ff-a529-a1b75de0065f']
   },
 
   {
@@ -218,7 +236,7 @@ const skills: Skill[] = [
     name: 'One Arm Pullup',
     type: 'advanced',
     photo: '/onearmpullup.jpeg',
-    description: "The One Arm Pullup represents the ultimate test of pulling strength in calisthenics, requiring an athlete to perform a complete pullup using only a single arm. This skill demands extraordinary strength, exceptional body control, and years of progressive training. Practitioners must generate enough pulling force to lift their entire body weight through a full range of motion using a single arm, while maintaining perfect body alignment and control. The movement requires not just incredible lat and bicep strength, but also precise technique, balance, and the ability to generate asymmetrical force. Unlike traditional pullups, this skill challenges the athlete's entire body to work as a unified system, developing unparalleled upper body strength and demonstrating the pinnacle of bodyweight pulling capabilities."
+    description: "The One Arm Pullup represents the ultimate test of pulling strength in calisthenics, requiring an athlete to perform a complete pullup using only a single arm. This skill demands extraordinary strength, exceptional body control, and years of progressive training. Practitioners must generate enough pulling force to lift their entire body weight through a full range of motion using a single arm, while maintaining perfect body alignment and control. The movement requires not just incredible lat and bicep strength, but also precise technique, balance, and the ability to generate asymmetrical force. Unlike traditional pullups, this skill challenges the athlete's entire body to work as a unified system, developing unparalleled upper body strength and demonstrating the pinnacle of bodyweight pulling capabilities.", workouts: ['516f82d1-e372-4faa-9d03-eefefa523552', '91060154-654a-49ed-b317-a826510f7359']
   },
 
 
@@ -227,7 +245,7 @@ const skills: Skill[] = [
     name: '90° Handstand \n Pushup',
     type: 'advanced',
     photo: '/handstandpushup.png',
-    description: "The 90° Handstand Pushup is an extreme variation of the standard handstand pushup, where the athlete performs a pressing movement from a near-horizontal position rather than a vertical one. This advanced skill demands extraordinary shoulder strength, body control, and the ability to generate pressing force from a mechanically challenging angle. Practitioners must develop the strength to press their entire body weight from a position that is almost parallel to the ground, requiring incredible shoulder and tricep strength. The movement challenges not just muscle power, but full-body tension, balance, and the mental fortitude to maintain control in an extremely difficult position. It represents a pinnacle of upper body strength and body control in calisthenics, pushing the boundaries of human physical capability."
+    description: "The 90° Handstand Pushup is an extreme variation of the standard handstand pushup, where the athlete performs a pressing movement from a near-horizontal position rather than a vertical one. This advanced skill demands extraordinary shoulder strength, body control, and the ability to generate pressing force from a mechanically challenging angle. Practitioners must develop the strength to press their entire body weight from a position that is almost parallel to the ground, requiring incredible shoulder and tricep strength. The movement challenges not just muscle power, but full-body tension, balance, and the mental fortitude to maintain control in an extremely difficult position. It represents a pinnacle of upper body strength and body control in calisthenics, pushing the boundaries of human physical capability.", workouts: ['f0ecd33f-7787-4ae6-bd35-445898d11308', '858772ae-ad28-47db-b090-d462fbf98dcb',]
   },
 
   {
@@ -235,7 +253,7 @@ const skills: Skill[] = [
     name: 'Front Lever Pullup',
     type: 'advanced',
     photo: '/frontlever.png',
-    description: "The Front Lever Pullup combines two of the most challenging calisthenics skills into a single, incredibly demanding movement. Practitioners must maintain a front lever position while performing a complete pullup, requiring extraordinary strength, body control, and full-body tension. This skill demands the ability to generate pulling force while simultaneously maintaining a perfectly horizontal body position, challenging the athlete's entire posterior chain. Unlike standard pullups or front lever holds, this movement requires practitioners to generate pulling strength from an extreme horizontal position, maintaining a rigid body throughout the entire range of motion. It represents the ultimate test of pulling strength, body control, and the ability to generate force under extreme mechanical disadvantage."
+    description: "The Front Lever Pullup combines two of the most challenging calisthenics skills into a single, incredibly demanding movement. Practitioners must maintain a front lever position while performing a complete pullup, requiring extraordinary strength, body control, and full-body tension. This skill demands the ability to generate pulling force while simultaneously maintaining a perfectly horizontal body position, challenging the athlete's entire posterior chain. Unlike standard pullups or front lever holds, this movement requires practitioners to generate pulling strength from an extreme horizontal position, maintaining a rigid body throughout the entire range of motion. It represents the ultimate test of pulling strength, body control, and the ability to generate force under extreme mechanical disadvantage.", workouts: ['55569d8e-f632-46f5-87ff-ea588c513e4b']
   },
 
   {
@@ -243,7 +261,8 @@ const skills: Skill[] = [
     name: 'Planche',
     type: 'advanced',
     photo: '/planche.jpeg',
-    description: "The Planche is the ultimate demonstration of static strength in calisthenics, where the athlete maintains a horizontal body position supported entirely by straight arms, with no part of the body touching the ground. This skill represents years of progressive training, demanding extraordinary shoulder strength, core stability, and full-body tension. Practitioners must generate enough horizontal force to support their entire body weight while maintaining a perfectly straight, rigid position parallel to the ground. The movement challenges not just muscle strength, but the ability to generate and maintain tension through a completely horizontal plane. Athletes must develop incredible shoulder, chest, and core strength, learning to shift their center of gravity and create a position that defies traditional gravitational constraints. The planche serves as the pinnacle of static strength in bodyweight training."
+    description: "The Planche is the ultimate demonstration of static strength in calisthenics, where the athlete maintains a horizontal body position supported entirely by straight arms, with no part of the body touching the ground. This skill represents years of progressive training, demanding extraordinary shoulder strength, core stability, and full-body tension. Practitioners must generate enough horizontal force to support their entire body weight while maintaining a perfectly straight, rigid position parallel to the ground. The movement challenges not just muscle strength, but the ability to generate and maintain tension through a completely horizontal plane. Athletes must develop incredible shoulder, chest, and core strength, learning to shift their center of gravity and create a position that defies traditional gravitational constraints. The planche serves as the pinnacle of static strength in bodyweight training.",
+    workouts: ['a4615383-bd6a-45f1-ab12-e77b33331093']
   },
 
 
@@ -334,21 +353,29 @@ export default function App() {
     [setEdges],
   );
 
+
+
+  const [savedSkills, setSavedSkillsRaw] = useState<string[]>(JSON.parse((getCookie('skills') ?? '[]') as string))
+
+  const setSavedSkills = (sk: string[]) => { setSavedSkillsRaw(sk); setCookie('skills', JSON.stringify(sk)) }
+
   const [mode, setMode] = useState<"flow" | "list">('flow')
 
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
+
   const [selectedSkill, setSelectedSkill] = useState<Skill>()
 
-  const [workoutState, setWorkoutState] = useState<{ loading: boolean, workout: WorkoutExtendedObject | undefined }>()
+  const [workoutState, setWorkoutState] = useState<{ loading: boolean, workouts: WorkoutExtendedObject[] | undefined }>()
 
   useEffect(() => {
     (async () => {
-      if (selectedSkill?.workouts) {
-        setWorkoutState({ loading: true, workout: undefined });
-        const res = await trpc().getWorkout.query({ id: selectedSkill.workouts[0] })
+      if (selectedSkill?.workouts && selectedSkill.workouts != 'none') {
+        setWorkoutState({ loading: true, workouts: undefined });
+        const res = await trpc().getWorkout.query({ ids: selectedSkill.workouts })
 
         if (res.success) {
-          setWorkoutState({ loading: false, workout: res.workout });
+          setWorkoutState({ loading: false, workouts: res.workout });
         }
 
       }
@@ -356,20 +383,32 @@ export default function App() {
     })();
   }, [selectedSkill])
 
-  const AppBar = (absolute: boolean) => <nav className='absolute top-0 bg-white w-full px-10 shadow'>
-    <Image src={'/logo.png'} alt='Pecsday Logo' width={100} height={100} />
+  const AppBar = (absolute: boolean) => <nav className=' bg-white w-full px-10 shadow flex flex-row items-center justify-between'>
+    <Link className='cursor-pointer' href={'https://pecsday.com'}><Image src={'/logo.png'} alt='Pecsday Logo' width={100} height={100} /></Link>
+    <div className='flex flex-row items-center space-x-10'>
+      <Link href={'https://pecsday.com/shop'} className='font-semibold hover:underline'>Shop</Link>
+      <Link href={'https://pecsday.com/about'} className='font-semibold hover:underline'>Our Story</Link>
+      <MdPerson className='w-7 h-7 cursor-pointer' onClick={() => setSettingsDialogOpen(true)} />
+      <Dialog open={settingsDialogOpen} onClose={() => setSettingsDialogOpen(false)}>
+        <h2 className='text-xl mb-5'>Settings</h2>
+        <Switch isOn={mode == 'list'} name='List mode' setIsOn={(b) => setMode(b ? 'list' : 'flow')} />
+      </Dialog>
+    </div>
   </nav>
 
   return (
-    <div style={{ width: '100vw', height: '100vh', backgroundColor: 'white' }}>
-      {mode === 'flow' && <>
+    <SavedSkillsContext.Provider value={savedSkills}>
+      {AppBar(true)}
+      {mode === 'flow' && <div style={{ width: '100vw', height: '90vh', backgroundColor: 'white' }}>
+
         <ReactFlow
           nodesDraggable={false}
-          className='90vh'
+          className='70vh'
           nodesConnectable={false}
           nodeTypes={nodeTypes}
           elementsSelectable={false}
           nodes={nodes}
+          fitView
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
@@ -378,19 +417,39 @@ export default function App() {
             setSelectedSkill(skills.find(i => i.id == node.id))
             setDialogOpen(true)
           }}
-        />
-      </>
-      }
+        >
+          <Background
+            gap={40} // Distance between grid lines
+            variant={BackgroundVariant.Lines}
+            size={0.5} // Thickness of the grid lines
+            color="#ebebeb" // Grid color
+          />
+        </ReactFlow>
 
-      <DialogOrBottomSheet bigWidth onClose={() => { setDialogOpen(false); setSelectedSkill(undefined); setWorkoutState({ loading: false, workout: undefined }) }} closeIcon open={dialogOpen}>
+
+
+        {devMode && <button className='absolute bottom-0' onClick={async () => {
+          await trpc().add.mutate()
+        }}>Do trpc</button>}
+      </div>}
+      <DialogOrBottomSheet bigWidth onClose={() => { setDialogOpen(false); setSelectedSkill(undefined); setWorkoutState({ loading: false, workouts: undefined }) }} closeIcon open={dialogOpen}>
         <div className='w-full flex flex-col-reverse md:flex-row items-start space-x-5 md:mt-10'>
-          <div>
+          <div className=''>
             <h2 className='text-2xl font-bold'>{selectedSkill?.name}</h2>
             {selectedSkill?.description}
           </div>
-          <Image className='rounded-t border bg-white' width={100} height={100} src={`/skills${selectedSkill?.photo!}`} alt='Image' />
+          <div className='flex w-full flex-col justify-between items-end h-full'>
+            <Image className='rounded-t border bg-white' width={100} height={100} src={`/skills${selectedSkill?.photo!}`} alt='Image' />
+          </div>
 
         </div>
+        {selectedSkill && <button
+          onClick={(e) => { e.stopPropagation(); setSavedSkills(savedSkills.includes(selectedSkill.id) ? savedSkills.filter(k => k !== selectedSkill.id) : [...savedSkills, selectedSkill.id]) }}
+          className={`px-2 mt-6 py-1 ${savedSkills.includes(selectedSkill.id) ? 'bg-green-100' : 'bg-gray-100'} rounded`}
+          style={{ color: savedSkills.includes(selectedSkill.id) ? 'green' : 'gray' }}
+        >
+          {savedSkills.includes(selectedSkill.id) ? 'Mark Uncomplete' : 'Mark Complete'}
+        </button>}
 
         <hr className='my-5' />
 
@@ -398,29 +457,37 @@ export default function App() {
         <h2 className='text-2xl mb-5 font-bold'>Workouts</h2>
 
         {workoutState?.loading ? "Loading..." : <>
-          {workoutState?.workout ? <ExerciseComponent workout={workoutState?.workout} /> : <>No workouts Yet</>}
+          {workoutState?.workouts ? (workoutState.workouts.map(i => <ExerciseComponent workout={i} />)) : <>No workouts Yet</>}
         </>}
       </DialogOrBottomSheet>
 
-      {mode === 'list' && skills.map(i => <div className='flex flex-row items-center'>
-        <Image className='rounded-t border bg-white' width={50} height={50} src={`/skills${i?.photo!}`} alt='Image' />
-        {i.name}
-      </div>)}
-
-
-      {AppBar(true)}
-
-      {/* {devMode && <button className='absolute bottom-0' onClick={async () => {
-        await trpc().add.mutate()
-      }}>Do trpc</button>} */}
-    </div>
+      {mode === 'list' && <div className='flex flex-col space-y-5 mx-auto max-w-2xl'>
+        <h1 className='text-2xl mt-5'>Calisthenics Skills</h1>
+        {skills.map(i => <div onClick={() => {
+          setSelectedSkill(skills.find(j => j.id == i.id))
+          setDialogOpen(true)
+        }} className='flex border rounded flex-row justify-between items-center space-x-2 cursor-pointer pr-2'>
+          <div className='flex flex-row items-center space-x-2'>
+            <Image className='rounded-t border bg-white' width={50} height={50} src={`/skills${i?.photo!}`} alt='Image' />
+            <p>{i.name}</p>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setSavedSkills(savedSkills.includes(i.id) ? savedSkills.filter(k => k !== i.id) : [...savedSkills, i.id]) }}
+            className={`px-2 py-1 ${savedSkills.includes(i.id) ? 'bg-green-100' : 'bg-gray-100'} rounded`}
+            style={{ color: savedSkills.includes(i.id) ? 'green' : 'gray' }}
+          >
+            {savedSkills.includes(i.id) ? 'Mark Uncomplete' : 'Mark Complete'}
+          </button>
+        </div>)}
+      </div>}
+    </SavedSkillsContext.Provider>
   );
 }
 
 
 export function ExerciseComponent({ workout }: { workout: WorkoutExtendedObject }) {
   const [extended, setExtended] = useState<number | undefined>()
-  return <div className='border rounded px-2 py-2'>
+  return <div className='border rounded px-2 py-2 mb-5'>
     <h3 className='text-xl font-semibold'>{workout.otherFields.name}</h3>
     {workout.exercises.map((i, index) => <div className='flex flex-col py-2 bg-slate-50 my-2 px-2 rounded'>
       <div className='flex flex-row items-center justify-between'>

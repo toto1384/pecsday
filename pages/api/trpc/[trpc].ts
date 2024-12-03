@@ -21,14 +21,14 @@ export type AppRouter = typeof appRouter;
 export const appRouter = router({
     users: usersRouter,
 
-    getWorkout: procedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
-        console.log("🚀 ~ getWorkout:procedure.input ~ id:", input.id)
+    getWorkout: procedure.input(z.object({ ids: z.array(z.string()) })).query(async ({ ctx, input }) => {
+        console.log("🚀 ~ getWorkout:procedure.input ~ id:", input.ids)
 
         const db = await dbConnect()
         const WorkoutModel = getWorkoutModel(db)
 
         const workout = await WorkoutModel.aggregate([
-            { $match: { _id: input.id } },
+            { $match: { _id: { $in: input.ids } } },
 
             // Unwind the list of IDs to be populated
             { $unwind: "$exercises" },
@@ -58,10 +58,10 @@ export const appRouter = router({
         ])
 
         console.log("🚀 ~ getWorkout:procedure.input ~ workout:", workout)
-        if (!workout) return { success: false, message: 'No workout found' }
+        if (!workout?.length) return { success: false, message: 'No workout found' }
 
 
-        return { success: true, workout: workout[0] }
+        return { success: true, workout: workout }
 
     }),
 
@@ -72,44 +72,44 @@ export const appRouter = router({
         const ExerciseModel = getExerciseModel(db);
 
         await WorkoutModel.create({
-            name: "Crow Pose Workout", public: true, _id: v4(),
+            name: "90 Degree Handstand Pushup Negative Progression", public: true, _id: v4(),
             exercises: [
-                { _id: "0ae9442a-f202-43e1-b627-1e805db3ad54", repsOrSecs: 12, rest: 60, },//leg raises
-                { _id: "0ae9442a-f202-43e1-b627-1e805db3ad54", repsOrSecs: 12, rest: 60, },//leg raises
-                { _id: "0ae9442a-f202-43e1-b627-1e805db3ad54", repsOrSecs: 12, rest: 60, },//leg raises
+                { _id: "e038682e-611c-414f-ad7e-02999802b682", repsOrSecs: 7, rest: 60, },//leg raises
+                { _id: "e038682e-611c-414f-ad7e-02999802b682", repsOrSecs: 7, rest: 60, },//leg raises
+                { _id: "e038682e-611c-414f-ad7e-02999802b682", repsOrSecs: 7, rest: 60, },//leg raises
 
-                { _id: "5b572d9b-d44c-47f6-8320-2da5482e893e", repsOrSecs: 14, rest: 60, },//tucked lsit
-                { _id: "5b572d9b-d44c-47f6-8320-2da5482e893e", repsOrSecs: 14, rest: 60, },//tucked lsit
-                { _id: "5b572d9b-d44c-47f6-8320-2da5482e893e", repsOrSecs: 14, rest: 60, },//tucked lsit
+                { _id: "3b2687c9-c455-4e02-9d3a-9b009bc61c04", repsOrSecs: 12, rest: 60, },//leg raises
+                { _id: "3b2687c9-c455-4e02-9d3a-9b009bc61c04", repsOrSecs: 12, rest: 60, },//leg raises
+                { _id: "3b2687c9-c455-4e02-9d3a-9b009bc61c04", repsOrSecs: 12, rest: 60, },//leg raises
 
-                { _id: "0ae9442a-f202-43e1-b627-1e805db3ad54", repsOrSecs: 12, rest: 60, },//leg raises
-                { _id: "0ae9442a-f202-43e1-b627-1e805db3ad54", repsOrSecs: 12, rest: 60, },//leg raises
-                { _id: "0ae9442a-f202-43e1-b627-1e805db3ad54", repsOrSecs: 12, rest: 60, },//leg raises
+                { _id: "e038682e-611c-414f-ad7e-02999802b682", repsOrSecs: 7, rest: 60, },//leg raises
+                { _id: "e038682e-611c-414f-ad7e-02999802b682", repsOrSecs: 7, rest: 60, },//leg raises
+                { _id: "e038682e-611c-414f-ad7e-02999802b682", repsOrSecs: 7, rest: 60, },//leg raises
 
-                { _id: "64a61bb8-5c80-409c-9314-8cdc815bd45a", repsOrSecs: 8, rest: 60, },//tucked lsit
-                { _id: "64a61bb8-5c80-409c-9314-8cdc815bd45a", repsOrSecs: 8, rest: 60, },//tucked lsit
-                { _id: "64a61bb8-5c80-409c-9314-8cdc815bd45a", repsOrSecs: 8, rest: 60, },//tucked lsit
+                { _id: "3b2687c9-c455-4e02-9d3a-9b009bc61c04", repsOrSecs: 12, rest: 60, },//leg raises
+                { _id: "3b2687c9-c455-4e02-9d3a-9b009bc61c04", repsOrSecs: 12, rest: 60, },//leg raises
+                { _id: "3b2687c9-c455-4e02-9d3a-9b009bc61c04", repsOrSecs: 12, rest: 60, },//leg raises
             ]
         } as WorkoutObject)
 
 
         // await (await ExerciseModel.create({
-        //     name: "Pistol Squat To Box",
-        //     ytEmbedLink: 'https://www.youtube.com/watch?v=ctffzu0jWu0',
+        //     name: "90 Degree Handstand Pushup Negative",
+        //     ytEmbedLink: 'https://www.youtube.com/embed/SUUsvlLqzOE?start=222&end=228',
         //     public: true, type: 'reps', _id: v4()
         // } as ExerciseObject)).save();
 
 
         // await (await ExerciseModel.create({
-        //     name: "Staggered Squat",
-        //     ytEmbedLink: 'https://www.youtube.com/embed/UDG3vlZtOoQ?start=15&end=20',
+        //     name: "Handstand Pushup",
+        //     ytEmbedLink: 'https://www.youtube.com/embed/FaRge9WFzWg?start=0&end=4',
         //     public: true, type: 'reps', _id: v4()
         // } as ExerciseObject)).save();
 
 
         // await (await ExerciseModel.create({
-        //     name: "Pistol Squat Negative",
-        //     ytEmbedLink: 'https://www.youtube.com/embed/UigjlJxCBhE?start=10&end=15',
+        //     name: "Straddle 90 Degree Handstand Pushup Negative",
+        //     ytEmbedLink: 'https://www.youtube.com/embed/IDEVXW5bwQ0?start=410&end=416',
         //     public: true, type: 'reps', _id: v4()
         // } as ExerciseObject)).save()
     }),
