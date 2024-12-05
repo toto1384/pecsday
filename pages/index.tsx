@@ -435,9 +435,9 @@ export default function App({ skills: skillsRes }: InferGetServerSidePropsType<t
 
 
 
-        {devMode && <button className='absolute bottom-0' onClick={async () => {
+        {/* {devMode && <button className='absolute bottom-0' onClick={async () => {
           await trpc().add.mutate()
-        }}>Do trpc</button>}
+        }}>Do trpc</button>} */}
       </div>}
       <DialogOrBottomSheet bigWidth onClose={() => { setDialogOpen(false); setSelectedSkill(undefined); setWorkoutState({ loading: false, workouts: undefined }) }} closeIcon open={dialogOpen}>
         <div className='w-full flex flex-col-reverse md:flex-row items-start space-x-5 md:mt-10'>
