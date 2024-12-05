@@ -52,7 +52,7 @@ const CustomNode = ({ data, id }: any) => {
       />
       {data.children ? data.children : <div className='cursor-pointer flex flex-col items-center group'>
         <div className='relative'>
-          {`${savedSkills.includes(id)}`}
+          {/* {`${savedSkills.includes(id)}`} */}
           {<MdCheckCircle className={`${savedSkills.includes(id) ? 'text-green-500' : 'text-gray-300'} absolute top-0 left-0 z-10`} />}
           <Image className='rounded-t border bg-white group-hover:scale-110 transition-all' width={50} height={50} src={`/skills${skill?.photo!}`} alt='Image' />
         </div>
@@ -348,7 +348,7 @@ const nodeTypes = {
   customNode: CustomNode,
 };
 
-const cookieOptions = { maxAge: 60 * 60 * 24 * 180, httpOnly: false, secure: true, sameSite: true } as OptionsType
+const cookieOptions = { maxAge: 60 * 60 * 24 * 180, httpOnly: false, secure: true, sameSite: false } as OptionsType
 
 export default function App({ skills: skillsRes }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
