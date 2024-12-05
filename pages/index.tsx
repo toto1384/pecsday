@@ -348,7 +348,7 @@ const nodeTypes = {
   customNode: CustomNode,
 };
 
-const cookieOptions = { maxAge: 60 * 60 * 24 * 180, httpOnly: false, secure: true, sameSite: false } as OptionsType
+const cookieOptions = { maxAge: 60 * 60 * 24 * 180, httpOnly: false, secure: true, sameSite: 'none' } as OptionsType
 
 export default function App({ skills: skillsRes }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
