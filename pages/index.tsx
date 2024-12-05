@@ -24,6 +24,8 @@ import { MdCheck, MdCheckBox, MdCheckCircle, MdIncompleteCircle, MdInfo, MdInfoO
 import Link from 'next/link';
 import { Switch } from '../components/switch';
 
+
+
 const devMode = true
 
 const SavedSkillsContext = createContext<string[]>([])
@@ -355,9 +357,9 @@ export default function App() {
 
 
 
-  const [savedSkills, setSavedSkillsRaw] = useState<string[]>(JSON.parse((getCookie('skills') ?? '[]') as string))
+  const [savedSkills, setSavedSkillsRaw] = useState<string[]>(JSON.parse((getCookie('skills', { sameSite: 'none', secure: true }) ?? '[]') as string))
 
-  const setSavedSkills = (sk: string[]) => { setSavedSkillsRaw(sk); setCookie('skills', JSON.stringify(sk)) }
+  const setSavedSkills = (sk: string[]) => { setSavedSkillsRaw(sk); setCookie('skills', JSON.stringify(sk), { sameSite: 'none', secure: true, }) }
 
   const [mode, setMode] = useState<"flow" | "list">('flow')
 
