@@ -12,10 +12,10 @@ import {
 
 import '@xyflow/react/dist/style.css';
 import Image from 'next/image';
-import { GetServerSidePropsContext } from 'next';
+import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { appRouter } from './api/trpc/[trpc]';
 import { t } from '../utils/trpcserver';
-import { getCookie, setCookie } from 'cookies-next';
+import { CookieValueTypes, getCookie, OptionsType, setCookie } from 'cookies-next';
 import { tokenName } from '../utils/cookies';
 import { Dialog, DialogOrBottomSheet } from '../components/overflows';
 import { trpc } from '../utils/trpc';
@@ -23,6 +23,7 @@ import { ExerciseObject, WorkoutExtendedObject, WorkoutObject } from '../utils/t
 import { MdCheck, MdCheckBox, MdCheckCircle, MdIncompleteCircle, MdInfo, MdInfoOutline, MdPerson, MdSettings } from 'react-icons/md';
 import Link from 'next/link';
 import { Switch } from '../components/switch';
+import { addYears, getDate, getYear } from 'date-fns';
 
 
 
@@ -51,6 +52,7 @@ const CustomNode = ({ data, id }: any) => {
       />
       {data.children ? data.children : <div className='cursor-pointer flex flex-col items-center group'>
         <div className='relative'>
+          {`${savedSkills.includes(id)}`}
           {<MdCheckCircle className={`${savedSkills.includes(id) ? 'text-green-500' : 'text-gray-300'} absolute top-0 left-0 z-10`} />}
           <Image className='rounded-t border bg-white group-hover:scale-110 transition-all' width={50} height={50} src={`/skills${skill?.photo!}`} alt='Image' />
         </div>
@@ -346,7 +348,9 @@ const nodeTypes = {
   customNode: CustomNode,
 };
 
-export default function App() {
+const cookieOptions = { maxAge: 60 * 60 * 24 * 180, httpOnly: false, secure: true, sameSite: true } as OptionsType
+
+export default function App({ skills: skillsRes }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -357,9 +361,10 @@ export default function App() {
 
 
 
-  const [savedSkills, setSavedSkillsRaw] = useState<string[]>(JSON.parse((getCookie('skills', { sameSite: 'none', secure: true }) ?? '[]') as string))
+  const [savedSkills, setSavedSkillsRaw] = useState<string[]>(skillsRes)
+  console.log("🚀 ~ App ~ savedSkills:", savedSkills)
 
-  const setSavedSkills = (sk: string[]) => { setSavedSkillsRaw(sk); setCookie('skills', JSON.stringify(sk), { sameSite: 'none', secure: true, }) }
+  const setSavedSkills = (sk: string[]) => { setSavedSkillsRaw(sk); setCookie('skills', JSON.stringify(sk), cookieOptions) }
 
   const [mode, setMode] = useState<"flow" | "list">('flow')
 
@@ -523,12 +528,15 @@ export async function getServerSideProps({ req, res, query, params }: GetServerS
 
   const token = getCookie(tokenName)
 
+  const skills = JSON.parse((await getCookie('skills', { ...cookieOptions, req, res }) ?? '[]') as string)
+
   const caller = t.createCallerFactory(appRouter)({ token: token as string });
 
 
 
   return {
     props: {
+      skills
     },
   }
 }
