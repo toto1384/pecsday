@@ -435,13 +435,13 @@ export default function App({ }: InferGetServerSidePropsType<typeof getServerSid
           </div>
 
         </div>
-        {selectedSkill && <button
+        {user ? selectedSkill && <button
           onClick={(e) => { e.stopPropagation(); setSavedSkills(savedSkills.includes(selectedSkill.id) ? savedSkills.filter(k => k !== selectedSkill.id) : [...savedSkills, selectedSkill.id]) }}
           className={`px-2 mt-6 py-1 ${savedSkills.includes(selectedSkill.id) ? 'bg-green-100' : 'bg-gray-100'} rounded`}
           style={{ color: savedSkills.includes(selectedSkill.id) ? 'green' : 'gray' }}
         >
           {savedSkills.includes(selectedSkill.id) ? 'Mark Uncomplete' : 'Mark Complete'}
-        </button>}
+        </button> : <p className='mt-5'>Login To Save Progress</p>}
 
         <hr className='my-5' />
 
