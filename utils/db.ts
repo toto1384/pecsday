@@ -50,6 +50,8 @@ export const UserSchema = z.object({
         loginType: z.enum(LoginTypeValues),
     }),
 
+    slug: z.string().optional(),
+
     created: zDate,
 
     name: z.string().optional(),
@@ -62,6 +64,8 @@ export const UserSchema = z.object({
         passwordKey: z.string().optional(),
         passwordKeyExpiration: zDate.optional()
     }).optional(),
+
+    skills: z.array(z.string()),
 
     options: z.object({
         newsletterOffers: z.boolean(),

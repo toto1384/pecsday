@@ -10,8 +10,8 @@ import { v4 } from "uuid";
 import { z } from "zod";
 
 
-export const createContext = ({ req, res }: { req?: NextApiRequest, res?: NextApiResponse }) => {
-    const token = getCookie(tokenName, { req, res })
+export const createContext = async ({ req, res }: { req?: NextApiRequest, res?: NextApiResponse }) => {
+    const token = await getCookie(tokenName, { req, res })
     return { token, req, res } as { token: string | undefined, req?: NextApiRequest, res?: NextApiResponse }
 }
 

@@ -182,9 +182,9 @@ export const usersRouter = router({
         const user = await procedureGetUser({
             options: {
                 allowNotCompleted: true,
-                userProjectionAdditional: [...(withFavorites ? favoriteUserProjectionAdditional : []), ...accountOptions ? ['gender', 'options', 'birthDate'] : []]
             }, token: ctx.token
         })
+        console.log("🚀 ~ token:", ctx.token)
 
         if (!user) return { success: false, code: 404, message: 'User not found' } as const
 
@@ -442,6 +442,13 @@ export const usersRouter = router({
 
     }),
 
+    updateSkills: authProcedure({ allowNotCompleted: true }).input(z.object({ skills: z.array(z.string()) })).mutation(async ({ ctx, input }) => {
+        const conn = await dbConnect()
+        const User = getUserModel(conn)
+
+        const res = await User.updateOne({ _id: ctx.user._id }, { $set: { skills: input.skills } })
+        console.log("🚀 ~ updateSkills:authProcedure ~ res:", res, ctx.user._id, input.skills)
+    }),
 
     changePassword: authProcedure({ allowNotCompleted: true, withPassword: true }).input(z.object({ oldPassword: z.string(), newPassword: PasswordSchema }))
         .mutation(async ({ ctx, input }) => {
@@ -521,12 +528,14 @@ export async function createUser(email: string, loginType: LoginType, keys: { pa
 
     const userObject: UserObject = {
         _id: v4(),
+        skills: [],
         login: {
             loginType: loginType,
             email,
             password: keys.password ? encryptString(keys.password) : undefined,
             googleId: keys.googleId ? encryptString(keys.googleId) : undefined
         },
+        name: email.split('@')[0],
         lastLoginDate: new Date(Date.now()),
         options: {
             newsletterActivity: true,

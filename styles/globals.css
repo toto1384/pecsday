@@ -16,3 +16,32 @@ body {
   font-family: sans-serif;
   box-sizing: border-box;
 }
+
+
+.btn-primary {
+  @apply bg-black px-7 py-3 text-white rounded-sm
+}
+
+
+/* DIVIDERS */
+.divider {
+  display: flex;
+  flex-direction: row;
+}
+
+.divider:before,
+.divider:after {
+  content: "";
+  flex: 1 1;
+  border-bottom: 1px solid;
+  border-color: var(--dividerColor);
+  margin: auto;
+}
+
+.divider:before {
+  margin-right: 10px
+}
+
+.divider:after {
+  margin-left: 10px
+}

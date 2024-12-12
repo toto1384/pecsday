@@ -46,7 +46,7 @@ export async function procedureGetUser({ options, token }: { token: string | und
         allowNotCompleted: options.allowNotCompleted,
         userProjectionAdditional: options.userProjectionAdditional,
         mandatoryVerified: options.mandatoryVerified,
-        withPassword: options.withPassword
+        withPassword: options.withPassword,
     })
     if (error || !user) {
         switch (status) {

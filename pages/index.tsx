@@ -15,27 +15,22 @@ import Image from 'next/image';
 import { GetServerSidePropsContext, InferGetServerSidePropsType } from 'next';
 import { appRouter } from './api/trpc/[trpc]';
 import { t } from '../utils/trpcserver';
-import { CookieValueTypes, getCookie, OptionsType, setCookie } from 'cookies-next';
+import { getCookie, OptionsType, setCookie } from 'cookies-next';
 import { tokenName } from '../utils/cookies';
-import { Dialog, DialogOrBottomSheet } from '../components/overflows';
+import { DialogOrBottomSheet } from '../components/overflows';
 import { trpc } from '../utils/trpc';
-import { ExerciseObject, WorkoutExtendedObject, WorkoutObject } from '../utils/types';
-import { MdCheck, MdCheckBox, MdCheckCircle, MdIncompleteCircle, MdInfo, MdInfoOutline, MdPerson, MdSettings } from 'react-icons/md';
-import Link from 'next/link';
-import { Switch } from '../components/switch';
-import { addYears, getDate, getYear } from 'date-fns';
+import { WorkoutExtendedObject } from '../utils/types';
+import { MdCheckCircle, MdInfo, MdInfoOutline } from 'react-icons/md';
+import { NavBar } from '../components/navBar';
+import { UserContext } from '../components/globals';
 
 
-
-const devMode = true
-
-const SavedSkillsContext = createContext<string[]>([])
 
 const CustomNode = ({ data, id }: any) => {
   const skill = skills.find(i => i.id == id)
 
 
-  const savedSkills = useContext(SavedSkillsContext)
+  const { setUser, user } = useContext(UserContext)
 
   return (
     <div className='text-center flex flex-col items-center rounded' >
@@ -53,7 +48,7 @@ const CustomNode = ({ data, id }: any) => {
       {data.children ? data.children : <div className='cursor-pointer flex flex-col items-center group'>
         <div className='relative'>
           {/* {`${savedSkills.includes(id)}`} */}
-          {<MdCheckCircle className={`${savedSkills.includes(id) ? 'text-green-500' : 'text-gray-300'} absolute top-0 left-0 z-10`} />}
+          {<MdCheckCircle className={`${user?.skills?.includes(id) ? 'text-green-500' : 'text-gray-300'} absolute top-0 left-0 z-10`} />}
           <Image className='rounded-t border bg-white group-hover:scale-110 transition-all' width={50} height={50} src={`/skills${skill?.photo!}`} alt='Image' />
         </div>
         <div className='whitespace-pre-wrap group-hover:text-blue-600 transition-all' style={{ fontWeight: "bold", marginBottom: "8px" }}>{skill?.name}</div>
@@ -350,7 +345,7 @@ const nodeTypes = {
 
 const cookieOptions = { maxAge: 60 * 60 * 24 * 180, httpOnly: false, secure: true, sameSite: 'none' } as OptionsType
 
-export default function App({ skills: skillsRes }: InferGetServerSidePropsType<typeof getServerSideProps>) {
+export default function App({ }: InferGetServerSidePropsType<typeof getServerSideProps>) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -360,16 +355,18 @@ export default function App({ skills: skillsRes }: InferGetServerSidePropsType<t
   );
 
 
+  const { setUser, user } = useContext(UserContext)
+  const savedSkills = user?.skills ?? []
 
-  const [savedSkills, setSavedSkillsRaw] = useState<string[]>(skillsRes)
-  console.log("🚀 ~ App ~ savedSkills:", savedSkills)
 
-  const setSavedSkills = (sk: string[]) => { setSavedSkillsRaw(sk); setCookie('skills', JSON.stringify(sk), cookieOptions) }
+  // const [savedSkills, setSavedSkillsRaw] = useState<string[]>(user?.skills ?? [])
+  // console.log("🚀 ~ App ~ savedSkills:", savedSkills)
+
+  const setSavedSkills = async (sk: string[]) => { if (user) setUser({ ...user, skills: sk }); await trpc().users.updateSkills.mutate({ skills: sk }); }
 
   const [mode, setMode] = useState<"flow" | "list">('flow')
 
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false)
 
   const [selectedSkill, setSelectedSkill] = useState<Skill>()
 
@@ -390,24 +387,12 @@ export default function App({ skills: skillsRes }: InferGetServerSidePropsType<t
     })();
   }, [selectedSkill])
 
-  const AppBar = (absolute: boolean) => <nav className=' bg-white w-full px-10 shadow flex flex-row items-center justify-between'>
-    <Link className='cursor-pointer' href={'https://pecsday.com'}><Image src={'/logo.png'} alt='Pecsday Logo' width={100} height={100} /></Link>
-    <div className='flex flex-row items-center space-x-10'>
-      <Link href={'https://pecsday.com/shop'} className='font-semibold hover:underline'>Shop</Link>
-      <Link href={'https://pecsday.com/about'} className='font-semibold hover:underline'>Our Story</Link>
-      <MdPerson className='w-7 h-7 cursor-pointer' onClick={() => setSettingsDialogOpen(true)} />
-      <Dialog open={settingsDialogOpen} onClose={() => setSettingsDialogOpen(false)}>
-        <h2 className='text-xl mb-5'>Settings</h2>
-        <Switch isOn={mode == 'list'} name='List mode' setIsOn={(b) => setMode(b ? 'list' : 'flow')} />
-      </Dialog>
-    </div>
-  </nav>
+
 
   return (
-    <SavedSkillsContext.Provider value={savedSkills}>
-      {AppBar(true)}
+    <>
+      <NavBar mode={mode} setMode={setMode} />
       {mode === 'flow' && <div style={{ width: '100vw', height: '90vh', backgroundColor: 'white' }}>
-
         <ReactFlow
           nodesDraggable={false}
           className='70vh'
@@ -487,7 +472,7 @@ export default function App({ skills: skillsRes }: InferGetServerSidePropsType<t
           </button>
         </div>)}
       </div>}
-    </SavedSkillsContext.Provider>
+    </>
   );
 }
 
@@ -528,7 +513,7 @@ export async function getServerSideProps({ req, res, query, params }: GetServerS
 
   const token = getCookie(tokenName)
 
-  const skills = JSON.parse((await getCookie('skills', { ...cookieOptions, req, res }) ?? '[]') as string)
+  // const skills = JSON.parse((await getCookie('skills', { ...cookieOptions, req, res }) ?? '[]') as string)
 
   const caller = t.createCallerFactory(appRouter)({ token: token as string });
 
@@ -536,7 +521,7 @@ export async function getServerSideProps({ req, res, query, params }: GetServerS
 
   return {
     props: {
-      skills
+      // skills
     },
   }
 }
