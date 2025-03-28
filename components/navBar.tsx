@@ -44,7 +44,7 @@ export const NavBar = ({ mode, setMode, userForContext }: { mode?: "list" | "flo
     return <nav className=' bg-white w-full px-2 md:px-10 shadow flex flex-row items-center justify-between'>
         <Link className='cursor-pointer' href={'/'}><Image src={'/logo.png'} alt='Pecsday Logo' width={100} height={100} /></Link>
         <div className='flex flex-row items-center space-x-10'>
-            <Link href={'https://pecsday.com/shop'} className='font-semibold hover:underline'>Shop</Link>
+            <Link href={'https://pecsday.com/equipment'} className='font-semibold hover:underline'>Shop</Link>
             <Link href={'https://pecsday.com/about'} className='font-semibold hover:underline'>Our Story</Link>
 
             {user == null ?
