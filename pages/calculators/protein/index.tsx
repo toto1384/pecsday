@@ -3,15 +3,12 @@
 import React, { useState } from 'react'
 
 
-// export default function ProteinCalculatorPage() {
-//     return <>
-//         Text
-//         <script src="../proteinCalculator.js"></script>
-//     </>
-// }
+export default function ProteinCalculatorPage() {
+    return <ProteinCalculator withLink />
+}
 
 
-export default function ProteinCalculator() {
+export function ProteinCalculator({ withLink }: { withLink: boolean }) {
     const [unitSystem, setUnitSystem] = useState<"metric" | "imperial">('imperial');
 
     const [age, setAge] = useState<number | undefined>();
@@ -285,7 +282,7 @@ export default function ProteinCalculator() {
                     </>
                 )}
 
-                <div className='text-end'><a target='_blank' href='https://pecsday.com' className='underline text-sm'>Pecsday</a></div>
+                {withLink && <div className='text-end'><a target='_blank' href='https://pecsday.com' className='underline text-sm'>Pecsday</a></div>}
             </div>
 
         </div>
