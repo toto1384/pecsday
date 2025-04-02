@@ -135,7 +135,7 @@ export function ProteinCalculator({ withLink, hideResultsIfNull }: { withLink: b
     return (
         <div className="max-w-lg mx-auto p-6 rounded-lg shadow-xl">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Protein Calculator</h2>
+                <h2 className="text-lg md:text-2xl font-bold">Protein Calculator</h2>
                 <div className="flex">
                     <button onClick={() => setUnitSystem('imperial')} className={`px-3 py-1 rounded-l ${unitSystem === 'imperial' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`} >
                         Imperial
@@ -264,7 +264,7 @@ export function ProteinCalculator({ withLink, hideResultsIfNull }: { withLink: b
                     <>
                         <h3 className='text-xl'>Daily Protein Intake</h3>
                         <div className="mt-4 p-4 bg-blue-900 rounded text-center">
-                            <p className="text-white text-lg">
+                            <p className="text-white text-sm md:text-lg">
                                 Expert Recommendation:
                                 <span className="font-bold text-blue-200 ml-2">
                                     {proteinIntake?.bodybuilding ?? 0}g
@@ -272,7 +272,7 @@ export function ProteinCalculator({ withLink, hideResultsIfNull }: { withLink: b
                             </p>
                         </div>
                         <div className="mt-4 p-4 bg-blue-900 rounded text-center">
-                            <p className="text-white text-lg">
+                            <p className="text-white text-sm md:text-lg">
                                 (RDA) Recommended Dietary Allowances:
                                 <span className="font-bold text-blue-200 ml-2">
                                     {proteinIntake?.rda ?? 0}g
