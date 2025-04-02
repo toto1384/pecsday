@@ -3,5 +3,5 @@ import { ProteinCalculator } from ".";
 
 
 export default function ProteinCalculatorPage() {
-    return <ProteinCalculator withLink={false} />
+    return <ProteinCalculator withLink={false} hideResultsIfNull={false} />
 }

@@ -4,11 +4,11 @@ import React, { useState } from 'react'
 
 
 export default function ProteinCalculatorPage() {
-    return <ProteinCalculator withLink />
+    return <ProteinCalculator withLink hideResultsIfNull />
 }
 
 
-export function ProteinCalculator({ withLink }: { withLink: boolean }) {
+export function ProteinCalculator({ withLink, hideResultsIfNull }: { withLink: boolean, hideResultsIfNull: boolean }) {
     const [unitSystem, setUnitSystem] = useState<"metric" | "imperial">('imperial');
 
     const [age, setAge] = useState<number | undefined>();
@@ -260,14 +260,14 @@ export function ProteinCalculator({ withLink }: { withLink: boolean }) {
                 </div>
 
                 {/* Results */}
-                {proteinIntake && (
+                {(!hideResultsIfNull || proteinIntake) && (
                     <>
                         <h3 className='text-xl'>Daily Protein Intake</h3>
                         <div className="mt-4 p-4 bg-blue-900 rounded text-center">
                             <p className="text-white text-lg">
                                 Expert Recommendation:
                                 <span className="font-bold text-blue-200 ml-2">
-                                    {proteinIntake.bodybuilding}g
+                                    {proteinIntake?.bodybuilding ?? 0}g
                                 </span>
                             </p>
                         </div>
@@ -275,7 +275,7 @@ export function ProteinCalculator({ withLink }: { withLink: boolean }) {
                             <p className="text-white text-lg">
                                 (RDA) Recommended Dietary Allowances:
                                 <span className="font-bold text-blue-200 ml-2">
-                                    {proteinIntake.rda}g
+                                    {proteinIntake?.rda ?? 0}g
                                 </span>
                             </p>
                         </div>
